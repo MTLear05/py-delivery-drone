@@ -1,8 +1,5 @@
 class Cargo:
-    def __init__(
-            self,
-            weight: int
-    ) -> None:
+    def __init__(self, weight: int) -> None:
         self.weight = weight
 
 
@@ -40,8 +37,14 @@ class FlyingRobot(BaseRobot):
             weight: int,
             coords: list[int] | None = None
     ) -> None:
-        super().__init__(name, weight)
-        self.coords = coords if coords is not None else [0, 0, 0]
+        # Normalize coords to always be 3D before passing to BaseRobot
+        if coords is None:
+            parent_coords = [0, 0, 0]
+        elif len(coords) == 2:
+            parent_coords = coords + [0]
+        else:
+            parent_coords = coords
+        super().__init__(name, weight, parent_coords)
 
     def go_up(self, step: int = 1) -> None:
         self.coords[2] += step
@@ -50,24 +53,25 @@ class FlyingRobot(BaseRobot):
         self.coords[2] -= step
 
 
-class DeliveryDrone(FlyingRobot):  # ✅ Inherit from FlyingRobot
+class DeliveryDrone(FlyingRobot):
     def __init__(
-            self,
-            name: str,
-            weight: int,
-            max_load_weight: int,
-            current_load: Cargo | None = None,
-            coords: list[int] | None = None,
+        self,
+        name: str,
+        weight: int,
+        max_load_weight: int,
+        cargo: Cargo | None = None,
+        coords: list[int] | None = None,
     ) -> None:
         super().__init__(name, weight, coords)
         self.max_load_weight = max_load_weight
-        self.current_load = current_load
+        self.current_load = None
+        if cargo is not None:
+            self.hook_load(cargo)
 
-    def hook_load(self, current_load: Cargo) -> None:
+    def hook_load(self, cargo: Cargo) -> None:
         if (self.current_load is None
-                and current_load.weight <= self.max_load_weight):
-            self.current_load = current_load
+                and cargo.weight <= self.max_load_weight):
+            self.current_load = cargo
 
     def unhook_load(self) -> None:
-        if self.current_load is not None:
-            self.current_load = None
+        self.current_load = None
